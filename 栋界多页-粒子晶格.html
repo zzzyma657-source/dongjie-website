@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>公爵森林 · 粒子晶格 | DONGJIE</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230A0F0E'/%3E%3Cpath d='M16 6l8 5v10l-8 5-8-5V11z' fill='none' stroke='%233FA178' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://miaoda.feishu.cn">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Outfit:wght@300;400;500;600;700&amp;family=Noto+Sans+SC:wght@300;400;500;700&amp;display=swap">
+<style>
+:root{
+  --bg:#0A0F0E;--panel:#101716;--ink:#E9F1EE;--muted:#9AA6A2;--faint:#67716D;
+  --green:#3FA178;--line:rgba(233,241,238,.13);
+  --out:"Outfit","Noto Sans SC",sans-serif;--sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);color:var(--ink);background:var(--bg);line-height:1.78;font-weight:400;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1240px;margin:0 auto;padding:0 30px}
+#bgcanvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+main,header,footer{position:relative;z-index:1}
+
+header{position:sticky;top:0;background:rgba(10,15,14,.78);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);z-index:50}
+.nav{display:flex;align-items:center;justify-content:space-between;height:70px;gap:16px}
+.brand{display:flex;align-items:center;gap:11px;font-family:var(--out);font-weight:600;font-size:16px;white-space:nowrap}
+.brand-mark{height:32px;width:auto}
+.brand i{font-style:normal;color:var(--green)}
+.nav-right{display:flex;align-items:center;gap:18px}
+.nav-links{display:none;gap:16px}
+.nav-links a{font-size:12.5px;color:var(--muted);white-space:nowrap;padding-bottom:3px}
+.nav-links a:hover{color:var(--ink)}
+.nav-links a.active{color:var(--green);border-bottom:1px solid var(--green)}
+.lang-box{position:relative}
+.lang-select{appearance:none;-webkit-appearance:none;background:transparent;border:1px solid var(--line);color:var(--ink);font-family:var(--out);font-size:12px;padding:8px 30px 8px 32px;white-space:nowrap;cursor:pointer}
+.lang-select:hover{border-color:var(--green)}
+.lang-globe{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--muted);pointer-events:none;transition:color .25s}
+.lang-box:hover .lang-globe{color:var(--green)}
+.lang-box::after{content:"";position:absolute;right:11px;top:50%;width:7px;height:7px;border-right:1px solid var(--green);border-bottom:1px solid var(--green);transform:translateY(-65%) rotate(45deg);pointer-events:none}
+.lang-select option{background:#101716;color:var(--ink)}
+@media(min-width:760px){.nav-links{display:flex}}
+.nav-toggle{display:none;flex-direction:column;gap:5px;background:transparent;border:none;cursor:pointer;padding:6px}
+.nav-toggle span{width:22px;height:2px;background:var(--ink);transition:transform .3s,opacity .3s}
+.nav-toggle.x span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nav-toggle.x span:nth-child(2){opacity:0}
+.nav-toggle.x span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+@media(max-width:759px){
+ .nav-toggle{display:flex}
+ .nav-links{display:none;position:fixed;top:70px;left:0;right:0;flex-direction:column;gap:0;background:var(--panel);border-bottom:1px solid var(--line);z-index:49}
+ .nav-links.open{display:flex}
+ .nav-links a{padding:16px 30px;font-size:14px;border-bottom:1px solid var(--line)}
+ .nav-links a.active{border-bottom:1px solid var(--line)}
+}
+
+/* 首页 hero */
+.hero{min-height:86vh;display:flex;align-items:center;padding:60px 0}
+.hero-label{font-family:var(--out);font-size:12.5px;color:var(--green);letter-spacing:.12em;margin-bottom:28px}
+.hero h1{font-family:var(--out);font-weight:700;font-size:clamp(38px,7.4vw,94px);line-height:1.05;letter-spacing:-.03em}
+.hero h1 .mask-line{display:block;overflow:hidden}
+.hero h1 .mask-line span{display:block;transform:translateY(110%);transition:transform 1s cubic-bezier(.22,1,.36,1)}
+.view-ready .hero h1 .mask-line span{transform:none}
+.view-ready .hero h1 .mask-line:nth-child(2) span{transition-delay:.12s}
+.view-ready .hero h1 .mask-line:nth-child(3) span{transition-delay:.24s}
+.hero .lead{margin-top:32px;color:var(--muted);max-width:580px;font-size:17px;line-height:1.78}
+.hero-grid{display:grid;grid-template-columns:1fr;gap:44px;align-items:center}
+@media(min-width:960px){.hero-grid{grid-template-columns:1.04fr 1fr;gap:56px}}
+.hero-3d iframe{width:100%;height:clamp(430px,58vh,600px);border:1px solid var(--line);background:#0B241B;display:block}
+.hero-3d-note{font-family:var(--out);font-size:12px;color:var(--faint);letter-spacing:.06em;margin-top:12px;text-align:center}
+@media(max-width:959px){.hero-3d iframe{height:400px}.hero{padding:44px 0 20px}}
+.hero-actions{display:flex;gap:16px;flex-wrap:wrap;margin-top:40px}
+.magnet{display:inline-block;font-family:var(--out);font-size:14px;padding:15px 32px;border:1px solid var(--green);will-change:transform;transition:background .3s}
+.magnet.solid{background:var(--green);color:#06201e}
+.magnet:hover{background:var(--green);color:#06201e}
+
+section{padding:70px 0}
+@media(min-width:900px){section{padding:100px 0}}
+.sec-label{font-family:var(--out);font-size:12px;color:var(--green);margin-bottom:20px}
+.sec-title{font-family:var(--out);font-weight:700;font-size:clamp(26px,4.6vw,50px);letter-spacing:-.02em;line-height:1.15;max-width:860px}
+
+/* ===== 行业前景版块 ===== */
+.vision{position:relative;display:flex;align-items:center;overflow:hidden;padding:0;min-height:min(80vh,860px)}
+.vision-bg{position:absolute;inset:0}
+.vision-bg img{width:100%;height:100%;object-fit:cover}
+.vision-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,15,14,.88) 0%,rgba(10,15,14,.55) 34%,rgba(10,15,14,.28) 52%,rgba(10,15,14,.62) 78%,rgba(10,15,14,.94) 100%)}
+.vision-inner{position:relative;z-index:1;width:100%;padding:110px 0}
+.vision .kicker{font-family:var(--out);font-size:13px;color:var(--green);letter-spacing:.3em;text-align:center;margin-bottom:30px}
+.vision h2{font-family:var(--out);font-weight:700;font-size:clamp(30px,5.4vw,64px);line-height:1.18;text-align:center;letter-spacing:-.02em;max-width:980px;margin:0 auto}
+.vision .lines{max-width:900px;margin:46px auto 0;text-align:center}
+.vision .lines p{color:var(--ink);font-size:clamp(16px,1.9vw,21px);line-height:2;font-weight:400}
+.vision .lines p.data{margin-top:16px}
+.vision .lines p.data .em{color:var(--green);font-weight:700}
+.vision .rule{width:44px;height:2px;background:var(--green);margin:46px auto 0}
+.vision .tagline{font-family:var(--out);font-size:clamp(13px,1.4vw,15px);letter-spacing:.34em;color:var(--muted);text-align:center;margin-top:28px}
+@media(max-width:600px){.vision .tagline{letter-spacing:.18em}.vision-inner{padding:80px 0}}
+
+/* 内页页头 */
+.page-head{padding:70px 0 40px;border-bottom:1px solid var(--line)}
+.page-head .crumb{font-family:var(--out);font-size:12px;color:var(--green);margin-bottom:18px}
+.page-head h1{font-family:var(--out);font-weight:700;font-size:clamp(32px,6.2vw,66px);letter-spacing:-.02em;line-height:1.1}
+.page-head p{color:var(--muted);margin-top:20px;max-width:680px}
+.prose{color:var(--muted);max-width:760px;font-size:15.5px;line-height:1.82}
+.prose p{margin-bottom:18px}
+.prose strong{color:var(--ink);font-weight:500}
+
+/* 能力/特性 列表 */
+.cap-list{border-top:1px solid var(--line);margin-top:40px}
+.cap-row{display:grid;grid-template-columns:1fr;gap:8px;padding:28px 0;border-bottom:1px solid var(--line)}
+.cap-row .k{font-family:var(--out);font-weight:500;font-size:19px}
+.cap-row .d{color:var(--muted);font-size:15.5px;max-width:600px;line-height:1.72}
+@media(min-width:820px){.cap-row{grid-template-columns:.35fr 1fr;gap:28px;align-items:baseline}}
+
+/* 双栏 + 图 */
+.split{display:grid;grid-template-columns:1fr;gap:34px;align-items:center}
+.split .media{overflow:hidden}
+.split .media img{width:100%;height:auto;object-fit:contain;display:block}
+@media(min-width:860px){.split{grid-template-columns:1fr 1fr;gap:50px}}
+
+/* 应用网格 */
+.app-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin-top:40px}
+.app-cell{background:var(--bg);padding:26px 20px}
+.app-cell .n{font-family:var(--out);color:var(--green);font-size:12px;margin-bottom:10px}
+.app-cell h3{font-family:var(--out);font-weight:500;font-size:18px}
+.app-cell p{font-size:14px;color:var(--muted);margin-top:8px;line-height:1.65}
+@media(min-width:900px){.app-grid{grid-template-columns:repeat(4,1fr)}}
+
+/* 阶段流程（无具体年份） */
+.flow{display:grid;grid-template-columns:1fr;gap:0;margin-top:40px;border-top:1px solid var(--line)}
+.flow-step{display:grid;grid-template-columns:60px 1fr;gap:18px;padding:26px 0;border-bottom:1px solid var(--line)}
+.flow-step .no{font-family:var(--out);color:var(--green);font-size:15px}
+.flow-step h3{font-family:var(--out);font-weight:500;font-size:18px;margin-bottom:6px}
+.flow-step p{color:var(--muted);font-size:14.5px;line-height:1.65}
+@media(min-width:760px){.flow{grid-template-columns:repeat(5,1fr);gap:1px}.flow-step{display:block;padding:24px 18px;border:1px solid var(--line);background:var(--bg)}.flow-step .no{display:block;margin-bottom:14px}}
+
+/* ===== 最新发布 ===== */
+.news-layout{display:grid;grid-template-columns:1fr;gap:30px;margin-top:6px}
+@media(min-width:880px){.news-layout{grid-template-columns:230px 1fr;gap:56px;align-items:start}}
+.news-side{display:flex;flex-direction:column}
+@media(min-width:880px){.news-side{position:sticky;top:96px}}
+.news-side .side-title{font-family:var(--out);font-weight:700;font-size:18px;padding-bottom:16px;margin-bottom:8px;border-bottom:1px solid var(--line)}
+.news-cat{text-align:left;background:transparent;border:none;border-left:2px solid transparent;color:var(--muted);font-family:var(--sans);font-size:15px;padding:13px 16px;cursor:pointer;transition:color .25s,border-color .25s}
+.news-sub{margin-top:24px;border-top:1px solid var(--line);padding-top:20px}
+.news-sub .sub-t{font-family:var(--out);font-size:14px;font-weight:700;letter-spacing:.08em;color:var(--ink)}
+.news-sub .sub-d{font-size:13px;color:var(--muted);line-height:1.75;margin:10px 0 14px}
+.sub-form{display:flex;flex-direction:column;gap:10px}
+.sub-form input{font-size:16px;padding:11px 12px;background:transparent;border:1px solid var(--line);color:var(--ink);transition:border-color .25s}
+.sub-form input::placeholder{color:var(--faint)}
+.sub-form input:focus{outline:none;border-color:var(--green-accent)}
+.sub-form .magnet{justify-content:center}
+.news-cat:hover{color:var(--ink)}
+.news-cat.active{color:var(--green);border-left-color:var(--green);font-weight:500}
+.news-main{display:flex;flex-direction:column}
+.post{display:grid;grid-template-columns:1fr;gap:20px;padding:28px 0;border-bottom:1px solid var(--line)}
+@media(min-width:680px){.post{grid-template-columns:240px 1fr;gap:28px;align-items:center}}
+.post-thumb{overflow:hidden;aspect-ratio:16/10;background:var(--panel)}
+.post-thumb img{width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.22,1,.36,1)}
+.post:hover .post-thumb img{transform:scale(1.05)}
+.post-top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
+.post-cat{font-family:var(--out);font-size:12px;color:var(--green);border:1px solid var(--line);padding:4px 11px;white-space:nowrap}
+.post-date{font-family:var(--out);font-size:12.5px;color:var(--faint);white-space:nowrap}
+.post-body h3{font-family:var(--out);font-weight:600;font-size:21px;line-height:1.35;transition:color .25s}
+.post:hover .post-body h3{color:var(--green)}
+.post-body p{color:var(--muted);font-size:15px;margin-top:10px;line-height:1.7}
+@media(max-width:879px){
+ .news-side{flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:8px}
+ .news-side .side-title{display:none}
+ .news-cat{white-space:nowrap;border-left:none;border-bottom:2px solid transparent;padding:10px 14px}
+ .news-cat.active{border-left-color:transparent;border-bottom-color:var(--green)}
+ .news-sub{flex:0 0 82%;border-top:1px solid var(--line);padding-top:16px;margin-left:14px}
+ .sub-form{flex-direction:row}
+ .sub-form input{flex:1;min-width:0}
+ .sub-form .magnet{white-space:nowrap}
+}
+
+/* 联系 */
+.contact-grid{display:grid;grid-template-columns:1fr;gap:40px}
+@media(min-width:860px){.contact-grid{grid-template-columns:1fr 1fr;gap:56px}}
+.cways .way{margin-bottom:24px}
+.cways .l{font-family:var(--out);font-size:12px;color:var(--faint);margin-bottom:5px}
+.cways .v{font-family:var(--out);font-size:17px}
+form .field{margin-bottom:18px}
+form label{display:block;font-family:var(--out);font-size:12px;color:var(--muted);margin-bottom:7px}
+form input,form textarea{width:100%;background:transparent;border:1px solid var(--line);color:var(--ink);font-family:var(--sans);font-size:14.5px;padding:13px 14px}
+form input:focus,form textarea:focus{outline:none;border-color:var(--green)}
+form button{font-family:var(--out);font-size:14px;padding:14px 32px;background:var(--green);color:#06201e;border:none}
+.toast{position:fixed;left:50%;bottom:36px;transform:translateX(-50%) translateY(20px);background:var(--green);color:#06201e;font-family:var(--out);font-size:13.5px;padding:13px 24px;opacity:0;transition:all .35s;z-index:99}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+footer{border-top:1px solid var(--line);padding:32px 0;font-family:var(--out);font-size:11.5px;color:var(--faint)}
+footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
+.reveal.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.reveal,.hero h1 .mask-line span{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+
+/* ===== 资质证书轮播 ===== */
+.cert-wrap{margin-top:44px;overflow:hidden;position:relative;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.cert-track{display:flex;width:max-content;animation:certscroll 120s linear infinite}
+.cert-wrap:hover .cert-track{animation-play-state:paused}
+.cert{flex:0 0 auto;width:200px;padding:18px 14px;border-right:1px solid var(--line)}
+.cert-btn{display:block;width:100%;cursor:default}
+.cert img{width:100%;aspect-ratio:5/7;object-fit:cover;object-position:top;display:block;border:1px solid var(--line);background:transparent}
+.cert img.fit{object-fit:contain;object-position:center;border-color:transparent;padding:0}
+.cert .nm{display:block;font-family:var(--out);font-weight:500;font-size:16px;margin-top:12px;color:var(--ink)}
+.cert .cd{display:block;font-family:var(--out);font-size:11px;color:var(--green);margin-top:6px;letter-spacing:.06em}
+.cert-btn:hover img,.cert-btn:focus-visible img{border-color:var(--green-accent)}
+.cert-btn:focus-visible{outline:2px solid var(--green-accent);outline-offset:4px}
+@keyframes certscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.cert-track{animation:none}}
+.cert-note{font-family:var(--out);font-size:12px;color:var(--faint);letter-spacing:.05em;margin-top:18px}
+
+/* ===== 产品系列（定性） ===== */
+.series-list{border-top:1px solid var(--line);margin-top:40px}
+.cat-filter{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 30px}
+.cat-pill{font-family:var(--out);font-size:12px;letter-spacing:.06em;color:var(--muted);border:1px solid var(--line);background:transparent;padding:8px 14px;cursor:pointer;transition:color .25s,border-color .25s}
+.cat-pill:hover{color:var(--ink);border-color:var(--green-accent)}
+.cat-pill.on{color:var(--green-accent);border-color:var(--green-accent)}
+.prod-grid{display:grid;grid-template-columns:1fr;gap:36px 26px}
+@media(min-width:600px){.prod-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:900px){.prod-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:899px){.prod-item.wide{grid-column:1/-1}}
+.prod-item{border-top:1px solid var(--line);padding-top:16px}
+.prod-item .ph{aspect-ratio:4/3;overflow:hidden;background:#0D1714;margin-bottom:14px}
+.prod-item .ph img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .55s ease}
+.prod-item:hover .ph img{transform:scale(1.045)}
+.prod-meta{display:flex;justify-content:space-between;font-family:var(--out);font-size:12px;letter-spacing:.08em;color:var(--faint)}
+.prod-item h3{margin:8px 0 6px;font-size:18px;font-weight:700}
+.prod-item .spec{font-family:var(--out);font-size:12px;letter-spacing:.04em;color:var(--muted)}
+.prod-item .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tag2{font-size:11px;line-height:1;color:var(--green-accent);border:1px solid rgba(63,161,120,.4);padding:5px 9px}
+.prod-note{font-family:var(--out);font-size:12px;color:var(--faint);margin-top:22px;letter-spacing:.04em}
+.prod-item{cursor:pointer;transition:border-color .3s}
+.prod-item:hover,.prod-item:focus-visible{border-top-color:var(--green-accent)}
+.prod-item:focus-visible{outline:2px solid var(--green-accent);outline-offset:4px}
+.prod-open{margin-top:12px;font-family:var(--out);font-size:12px;letter-spacing:.08em;color:var(--faint);transition:color .3s}
+.prod-item:hover .prod-open{color:var(--green-accent)}
+.prod-modal{position:fixed;inset:0;z-index:90;display:flex;justify-content:flex-end;pointer-events:none}
+.pm-backdrop{position:absolute;inset:0;background:rgba(4,10,8,.68);opacity:0;transition:opacity .32s;pointer-events:auto}
+.prod-modal.on{pointer-events:auto}
+.prod-modal.on .pm-backdrop{opacity:1}
+.pm-panel{position:relative;width:min(680px,94vw);height:100%;background:#0A1410;border-left:1px solid var(--line);transform:translateX(102%);transition:transform .38s cubic-bezier(.22,1,.36,1);overflow-y:auto;padding:30px 30px 44px;pointer-events:auto}
+.prod-modal.on .pm-panel{transform:none}
+.pm-close{position:absolute;top:14px;right:16px;width:40px;height:40px;font-size:22px;line-height:1;color:var(--muted);border:1px solid var(--line);background:transparent;cursor:pointer;transition:color .25s,border-color .25s}
+.pm-close:hover{color:var(--ink);border-color:var(--green-accent)}
+.pm-img{background:#0D1714;margin:4px 44px 22px 0}
+.pm-img img{width:100%;max-height:340px;object-fit:contain;display:block}
+.pm-name{margin:8px 0 20px;font-size:24px;font-weight:700}
+.pm-row{display:flex;justify-content:space-between;gap:20px;padding:11px 0;border-bottom:1px solid rgba(163,205,183,.16)}
+.pm-row span:first-child{font-family:var(--out);font-size:12px;letter-spacing:.06em;color:var(--muted)}
+.pm-row span:last-child{font-family:var(--out);font-size:13px;letter-spacing:.03em;color:var(--ink)}
+.pm-panel .tags{margin-top:20px}
+.pm-note{margin:16px 0 22px;font-family:var(--out);font-size:12px;color:var(--faint);line-height:1.7}
+@media(max-width:640px){
+.prod-modal{align-items:flex-end}
+.pm-panel{width:100%;height:88vh;transform:translateY(102%);border-left:none;border-top:1px solid var(--line);padding:26px 20px 36px}
+.pm-img{max-height:44vh;overflow:hidden}
+.pm-img img{max-height:44vh}
+}
+.series-row{display:grid;grid-template-columns:90px 1fr;gap:20px;padding:28px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.series-row .tag{font-family:var(--out);color:var(--green);font-size:12px}
+.series-row h3{font-family:var(--out);font-weight:500;font-size:20px;margin-bottom:8px}
+.series-row p{color:var(--muted);font-size:15px;max-width:660px;line-height:1.7}
+
+/* ===== 全宽横幅 ===== */
+.banner{position:relative;overflow:hidden}
+.banner img{width:100%;height:clamp(220px,38vw,460px);object-fit:cover}
+.banner .cap{position:absolute;left:0;right:0;bottom:0}
+.banner .cap .wrap{padding-bottom:34px}
+.banner .cap h3{font-family:var(--out);font-weight:600;font-size:clamp(20px,3vw,34px)}
+
+/* ===== 右下角半隐藏联系块 ===== */
+.contact-dock{position:fixed;right:0;bottom:128px;z-index:60;display:flex;transform:translateX(calc(100% - 42px));transition:transform .45s cubic-bezier(.22,1,.36,1)}
+.contact-dock.open,.contact-dock:hover,.contact-dock:focus-within{transform:translateX(0)}
+.dock-tab{flex:0 0 42px;background:var(--green);color:#06201e;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;font-family:var(--out);font-size:12px;font-weight:600;letter-spacing:.22em;border:none;cursor:pointer}
+.dock-panel{flex:0 0 250px;background:var(--panel);border:1px solid var(--line);border-right:none;padding:22px 20px}
+.dock-panel h4{font-family:var(--out);font-size:13px;font-weight:600;margin-bottom:16px}
+.dock-item{display:flex;align-items:center;gap:12px;padding:9px 0;font-family:var(--out);font-size:13px;color:var(--muted)}
+.dock-item svg{flex:0 0 18px;color:var(--green)}
+.dock-item:hover{color:var(--ink)}
+@media(max-width:760px){.contact-dock{bottom:104px}}
+
+/* ===== 页脚多列 ===== */
+.footer-grid{display:grid;grid-template-columns:1fr;gap:34px;padding:16px 0 30px}
+@media(min-width:760px){.footer-grid{grid-template-columns:1.5fr 1fr 1fr 1.3fr}}
+.foot-col h5{font-family:var(--out);font-size:12px;color:var(--ink);font-weight:600;margin-bottom:16px}
+.foot-col a,.foot-col p{display:block;color:var(--faint);font-size:12.5px;margin-bottom:10px;font-family:var(--sans)}
+.foot-col a:hover{color:var(--green)}
+.foot-social{display:flex;gap:16px;margin-top:8px}
+.foot-social svg{width:18px;height:18px;color:var(--faint)}
+.foot-social a:hover svg{color:var(--green)}
+.foot-bottom{border-top:1px solid var(--line);padding-top:22px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+
+/* ===== Cookie 同意弹窗 ===== */
+.cookie-bar{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--green);padding:20px 0;z-index:80;transform:translateY(110%);transition:transform .5s cubic-bezier(.22,1,.36,1)}
+.cookie-bar.show{transform:translateY(0)}
+.cookie-inner{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.cookie-inner p{flex:1;min-width:260px;font-size:13px;color:var(--muted)}
+.cookie-actions{display:flex;gap:12px}
+.cookie-actions button{font-family:var(--out);font-size:13px;padding:11px 22px;border:1px solid var(--green);background:transparent;color:var(--ink);cursor:pointer}
+.cookie-actions button.accept{background:var(--green);color:#06201e}
+
+/* ===== 表单授权勾选 ===== */
+.consent{display:flex;gap:10px;align-items:flex-start;margin-bottom:20px;font-size:12.5px;color:var(--muted)}
+.consent input{width:16px;height:16px;flex:0 0 16px;margin-top:3px;accent-color:var(--green)}
+.consent a{color:var(--green)}
+
+/* ===== 窄屏导航收紧 ===== */
+@media(max-width:900px){.nav-links{gap:11px}.nav-links a{font-size:11.5px}.brand span{font-size:14px}.brand-mark{height:27px}.nav-right{gap:12px}}
+</style>
+</head>
+<body>
+<canvas id="bgcanvas" aria-hidden="true"></canvas>
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#/home"><img src="assets/logo-mark.png" class="brand-mark" alt="公爵森林 DUKE FOREST"><span>公爵森林 <i>DONGJIE</i></span></a>
+    <div class="nav-right">
+      <nav class="nav-links" id="navLinks">
+        <a href="#/home" data-zh="首页" data-en="Home">首页</a>
+        <a href="#/about" data-zh="关于我们" data-en="About Us">关于我们</a>
+        <a href="#/technology" data-zh="技术方案" data-en="Solutions">技术方案</a>
+        <a href="#/applications" data-zh="产品中心" data-en="Products">产品中心</a>
+        <a href="#/partnership" data-zh="商务合作" data-en="Partnership">商务合作</a>
+        <a href="#/news" data-zh="最新发布" data-en="News">最新发布</a>
+      </nav>
+      <button class="nav-toggle" id="navToggle" aria-label="菜单" aria-expanded="false"><span></span><span></span><span></span></button>
+      <div class="lang-box">
+        <svg class="lang-globe" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18" stroke="currentColor" stroke-width="1.5"/></svg>
+        <select class="lang-select" id="langSelect" aria-label="Select language">
+          <option value="zh">中文</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="ru">Русский</option>
+          <option value="ar">العربية</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</header>
+<main id="view"></main>
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="foot-col">
+        <h5>公爵森林 DONGJIE</h5>
+        <p>ANHUI DONGJIE NEW MATERIAL TECHNOLOGY CO., LTD.</p>
+        <p data-zh="安徽省合肥市经开区中德合作创新示范园" data-en="Sino-German Innovation Park, Hefei, Anhui, China">安徽省合肥市经开区中德合作创新示范园</p>
+        <div class="foot-social">
+          <a class="plink" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 22v-8h2.7l.4-3.1H13V8.9c0-.9.25-1.5 1.55-1.5H16.3V4.6c-.28-.04-1.24-.12-2.36-.12-2.34 0-3.94 1.43-3.94 4.06v2.36H7.3V14h2.7v8h3z"/></svg></a>
+          <a class="plink" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM10 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21h-4v-5.5c0-1.3-.02-2.98-1.82-2.98-1.82 0-2.1 1.42-2.1 2.88V21h-4z"/></svg></a>
+          <a class="plink" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.2-.4-4.7c-.22-.82-.86-1.46-1.68-1.68C19.4 5.2 12 5.2 12 5.2s-7.4 0-8.92.42c-.82.22-1.46.86-1.68 1.68C1 8.8 1 12 1 12s0 3.2.4 4.7c.22.82.86 1.46 1.68 1.68 1.52.42 8.92.42 8.92.42s7.4 0 8.92-.42c.82-.22 1.46-.86 1.68-1.68.4-1.5.4-4.7.4-4.7zM9.8 15.3V8.7l6 3.3z"/></svg></a>
+          <a class="plink" aria-label="WeChat"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.5 4C4.9 4 2 6.5 2 9.6c0 1.8 1 3.3 2.5 4.3l-.6 1.9 2.2-1.1c.8.2 1.5.3 2.4.3h.5c-.1-.5-.2-1-.2-1.5 0-3 2.9-5.3 6.4-5.3h.6C15.2 5.6 12.1 4 8.5 4zM6.5 8.4a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8zm4.2 0a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8zM22 13.8c0-2.6-2.5-4.7-5.5-4.7s-5.5 2.1-5.5 4.7 2.5 4.7 5.5 4.7c.6 0 1.3-.1 1.9-.3l1.8.9-.5-1.6c1.4-.9 2.3-2.2 2.3-3.7zm-7.3-.8a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5zm3.6 0a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5z"/></svg></a>
+        </div>
+      </div>
+      <div class="foot-col">
+        <h5 data-zh="快速导航" data-en="Navigation">快速导航</h5>
+        <a href="#/home" data-zh="首页" data-en="Home">首页</a>
+        <a href="#/about" data-zh="关于我们" data-en="About Us">关于我们</a>
+        <a href="#/technology" data-zh="技术方案" data-en="Solutions">技术方案</a>
+        <a href="#/applications" data-zh="产品中心" data-en="Products">产品中心</a>
+        <a href="#/partnership" data-zh="商务合作" data-en="Partnership">商务合作</a>
+        <a href="#/news" data-zh="最新发布" data-en="News">最新发布</a>
+      </div>
+      <div class="foot-col">
+        <h5 data-zh="联系方式" data-en="Contact">联系方式</h5>
+        <p>400-9020-918</p>
+        <p>djkj321@163.com</p>
+        <a href="#/contact" data-zh="在线询盘" data-en="Send inquiry">在线询盘</a>
+      </div>
+      <div class="foot-col">
+        <h5 data-zh="合规" data-en="Legal">合规</h5>
+        <a class="plink" data-zh="隐私政策" data-en="Privacy Policy">隐私政策</a>
+        <a class="plink" data-zh="Cookie 政策" data-en="Cookie Policy">Cookie 政策</a>
+        <a class="plink" data-zh="GDPR 声明" data-en="GDPR Statement">GDPR 声明</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 ANHUI DONGJIE NEW MATERIAL TECHNOLOGY CO., LTD.</span>
+      <span data-zh="保留所有权利" data-en="All rights reserved">保留所有权利</span>
+    </div>
+  </div>
+</footer>
+<div class="toast" id="toast"></div>
+<div class="contact-dock" id="contactDock">
+  <button class="dock-tab" id="dockTab" data-zh="联系我们" data-en="CONTACT">联系我们</button>
+  <div class="dock-panel">
+    <h4 data-zh="联系我们" data-en="Contact Us">联系我们</h4>
+    <a class="dock-item plink"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.5 4C4.9 4 2 6.5 2 9.6c0 1.8 1 3.3 2.5 4.3l-.6 1.9 2.2-1.1c.8.2 1.5.3 2.4.3h.5c-.1-.5-.2-1-.2-1.5 0-3 2.9-5.3 6.4-5.3h.6C15.2 5.6 12.1 4 8.5 4zM6.5 8.4a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8zm4.2 0a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8zM22 13.8c0-2.6-2.5-4.7-5.5-4.7s-5.5 2.1-5.5 4.7 2.5 4.7 5.5 4.7c.6 0 1.3-.1 1.9-.3l1.8.9-.5-1.6c1.4-.9 2.3-2.2 2.3-3.7zm-7.3-.8a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5zm3.6 0a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5z"/></svg><span data-zh="微信（待补充）" data-en="WeChat">微信（待补充）</span></a>
+    <a class="dock-item" href="mailto:djkj321@163.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14"/><path d="M3 7l9 6 9-6"/></svg><span>djkj321@163.com</span></a>
+    <a class="dock-item plink"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 22v-8h2.7l.4-3.1H13V8.9c0-.9.25-1.5 1.55-1.5H16.3V4.6c-.28-.04-1.24-.12-2.36-.12-2.34 0-3.94 1.43-3.94 4.06v2.36H7.3V14h2.7v8h3z"/></svg><span>Facebook</span></a>
+    <a class="dock-item" href="tel:4009020918"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg><span>400-9020-918</span></a>
+  </div>
+</div>
+<div class="cookie-bar" id="cookieBar">
+  <div class="wrap cookie-inner">
+    <p data-zh="我们使用 Cookie 以提供更好的浏览体验、分析访问并记住您的语言选择。继续浏览即表示您同意我们的 Cookie 与隐私政策。" data-en="We use cookies to improve your experience, analyze traffic and remember your language. By continuing, you agree to our Cookie and Privacy Policy.">我们使用 Cookie 以提供更好的浏览体验、分析访问并记住您的语言选择。继续浏览即表示您同意我们的 Cookie 与隐私政策。</p>
+    <div class="cookie-actions">
+      <button id="cookieReject" data-zh="拒绝" data-en="Decline">拒绝</button>
+      <button class="accept" id="cookieAccept" data-zh="接受" data-en="Accept">接受</button>
+    </div>
+  </div>
+</div>
+<script>
+/* ============ 全局状态与双语 ============ */
+var saved=localStorage.getItem('djlang'),urlLang=new URLSearchParams(location.search).get('lang');
+var lang=urlLang||saved||'zh';
+var view=document.getElementById('view');
+var langSelect=document.getElementById('langSelect');
+function displayLang(){return lang==='zh'?'zh':'en';}
+function applyLang(){
+  var dl=displayLang();
+  document.documentElement.lang=dl==='en'?'en':'zh-CN';
+  view.querySelectorAll('[data-zh]').forEach(function(el){el.textContent=dl==='en'?el.dataset.en:el.dataset.zh;});
+  view.querySelectorAll('[data-alt-zh]').forEach(function(el){el.alt=dl==='en'?el.dataset.altEn:el.dataset.altZh;});
+  view.querySelectorAll('[data-ph-zh]').forEach(function(el){el.placeholder=dl==='en'?el.dataset.phEn:el.dataset.phZh;});
+  document.querySelectorAll('#navLinks [data-zh],footer [data-zh],#contactDock [data-zh],#cookieBar [data-zh]').forEach(function(el){el.textContent=dl==='en'?el.dataset.en:el.dataset.zh;});
+  langSelect.value=lang;
+}
+langSelect.addEventListener('change',function(){lang=langSelect.value;localStorage.setItem('djlang',lang);applyLang();});
+
+/* ============ Toast ============ */
+var toastEl=document.getElementById('toast'),toastTimer;
+function toast(msg){
+  toastEl.textContent=msg;toastEl.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(function(){toastEl.classList.remove('show');},2600);
+}
+
+/* ============ SEO：各路由独立标题/描述 ============ */
+var META={
+ '/home':{zt:['公爵森林 · 碳纳米管柔性发热膜','安徽栋界研发制造碳纳米管柔性发热膜，提供均匀、安全、可定制的发热模组。'],en:['DONGJIE · Carbon Nanotube Flexible Heating Film','Anhui Dongjie develops and manufactures carbon nanotube flexible heating films.']},
+ '/about':{zt:['关于我们 · 公爵森林','专注柔性发热材料研发与制造，位于合肥中德合作创新示范园。'],en:['About Us · DONGJIE','Focused on flexible heating materials, based in Hefei.']},
+ '/technology':{zt:['技术方案 · 公爵森林','碳纳米管柔性发热膜的纳米导电网络与核心特性。'],en:['Solutions · DONGJIE','Carbon nanotube flexible heating film and core properties.']},
+ '/applications':{zt:['产品中心 · 公爵森林','碳纳米管与石墨烯终端产品：15 款产品覆盖九大品类。'],en:['Products · DONGJIE','CNT & graphene consumer products: 15 models across nine categories.']},
+ '/partnership':{zt:['商务合作 · 公爵森林','合作模式与开发流程，面向全球客户。'],en:['Partnership · DONGJIE','Partnership models and process for global clients.']},
+ '/news':{zt:['最新发布 · 公爵森林','技术科普与应用趋势。'],en:['News · DONGJIE','Technical topics and application trends.']},
+ '/contact':{zt:['联系我们 · 公爵森林','获取样品、定制方案与商务合作。'],en:['Contact · DONGJIE','Request samples, custom solutions and partnership.']}
+};
+function updateMeta(r){
+ var m=META[r]||META['/home'],pair=displayLang()==='en'?m.en:m.zt;
+ document.title=pair[0];
+ var md=document.querySelector('meta[name="description"]');
+ if(!md){md=document.createElement('meta');md.setAttribute('name','description');document.head.appendChild(md);}
+ md.setAttribute('content',pair[1]);
+}
+
+/* ============ 渲染后处理 ============ */
+var io;
+function afterRender(route){
+  applyLang();
+  updateMeta(route);
+  document.querySelectorAll('#navLinks a').forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+route);});
+  if(io&&io.disconnect)io.disconnect();
+  io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.14});
+  view.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
+  requestAnimationFrame(function(){view.classList.add('view-ready');});
+  bindMagnet();
+  bindNews();
+  bindProducts();
+  bindSubscribe();
+  document.body.style.overflow='';
+  window.scrollTo(0,0);
+}
+function bindSubscribe(){
+  var f=view.querySelector('#subForm');
+  if(!f)return;
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var input=view.querySelector('#subEmail');
+    var em=input.value.trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){
+      toast(displayLang()==='en'?'Please enter a valid email address.':'请输入有效的邮箱地址。');
+      input.focus();
+      return;
+    }
+    try{
+      var subs=JSON.parse(localStorage.getItem('djsubs')||'[]');
+      if(subs.indexOf(em)<0){subs.push(em);localStorage.setItem('djsubs',JSON.stringify(subs));}
+    }catch(err){}
+    input.value='';
+    toast(displayLang()==='en'?'Subscribed. Updates will be sent to your inbox.':'订阅成功，发布新资讯时将自动同步到您的邮箱。');
+  });
+}
+function bindProducts(){
+  var pills=view.querySelectorAll('.cat-pill');
+  if(!pills.length)return;
+  pills.forEach(function(p){
+    p.addEventListener('click',function(){
+      pills.forEach(function(x){x.classList.remove('on');});
+      p.classList.add('on');
+      var c=p.getAttribute('data-cat');
+      view.querySelectorAll('.prod-item').forEach(function(it){
+        it.style.display=(c==='all'||it.getAttribute('data-cat')===c)?'':'none';
+      });
+    });
+  });
+  pills[0].classList.add('on');
+  view.querySelectorAll('.prod-item').forEach(function(it){
+    it.addEventListener('click',function(){openProd(it.getAttribute('data-no'));});
+    it.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();openProd(it.getAttribute('data-no'));}
+    });
+  });
+}
+function openProd(no){
+  var p=(window.PRODS||[]).filter(function(x){return x[0]===no;})[0];
+  if(!p)return;
+  var el=document.createElement('div');
+  el.className='prod-modal';
+  el.innerHTML=
+  '<div class="pm-backdrop"></div>'+
+  '<div class="pm-panel" role="dialog" aria-modal="true" aria-label="'+p[3]+'">'+
+  '<button type="button" class="pm-close" aria-label="关闭">&times;</button>'+
+  '<div class="pm-img"><img src="'+p[6]+'" alt="'+p[3]+'"></div>'+
+  '<div class="prod-meta"><span class="pno">NO. '+p[0]+'</span><span data-zh="'+p[1]+'" data-en="'+p[2]+'">'+p[1]+'</span></div>'+
+  '<h3 class="pm-name" data-zh="'+p[3]+'" data-en="'+p[4]+'">'+p[3]+'</h3>'+
+  '<div class="pm-spec">'+
+  '<div class="pm-row"><span data-zh="产品尺寸" data-en="Product size">产品尺寸</span><span>'+p[5].split(' · ')[0]+'</span></div>'+
+  '<div class="pm-row"><span data-zh="净重" data-en="Net weight">净重</span><span>'+p[5].split(' · ')[1]+'</span></div>'+
+  '<div class="pm-row"><span data-zh="整箱尺寸" data-en="Carton size">整箱尺寸</span><span>'+p[8][0]+'</span></div>'+
+  '<div class="pm-row"><span data-zh="整箱重量" data-en="Carton weight">整箱重量</span><span>'+p[8][1]+'</span></div>'+
+  '<div class="pm-row"><span data-zh="整箱数量" data-en="Qty per carton">整箱数量</span><span>'+p[8][2]+'</span></div>'+
+  '</div>'+
+  '<div class="tags">'+p[7].map(function(t){return '<span class="tag2" data-zh="'+t[0]+'" data-en="'+t[1]+'">'+t[0]+'</span>';}).join('')+'</div>'+
+  '<p class="pm-note" data-zh="产品尺寸、净重与整箱数据为标称值，实际以出厂实物为准；图片为产品示意。" data-en="Dimensions, net weights and carton data are nominal values; actual products prevail. Images are for illustration.">产品尺寸、净重与整箱数据为标称值，实际以出厂实物为准；图片为产品示意。</p>'+
+  '<a class="magnet solid" href="#/contact" data-zh="获取报价" data-en="Request quote">获取报价</a>'+
+  '</div>';
+  view.appendChild(el);
+  applyLang();
+  requestAnimationFrame(function(){el.classList.add('on');});
+  document.body.style.overflow='hidden';
+  el.querySelector('.pm-close').focus();
+  function close(){
+    el.classList.remove('on');
+    document.body.style.overflow='';
+    setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},380);
+  }
+  el.querySelector('.pm-backdrop').addEventListener('click',close);
+  el.querySelector('.pm-close').addEventListener('click',close);
+  el._close=close;
+  document.addEventListener('keydown',function esc(e){
+    if(e.key==='Escape'){close();document.removeEventListener('keydown',esc);}
+  });
+}
+
+/* ============ 路由 ============ */
+function currentRoute(){var h=location.hash.replace('#','');return h&&h.indexOf('/')===0?h:'/home';}
+function route(){
+  var r=currentRoute();
+  view.classList.remove('view-ready');
+  view.innerHTML=(renderers[r]||renderers['/home'])();
+  afterRender(r);
+}
+window.addEventListener('hashchange',route);
+
+/* ============ 视图：首页 ============ */
+renderers={};
+renderers['/home']=function(){
+var certs=[
+ ['ISO 9001','质量管理体系','Quality Management','assets/certs/iso9001.jpg'],
+ ['CE EMC','电磁兼容','EMC Compliance','assets/certs/ce-emc.jpg'],
+ ['FCC SDoC','射频合规','RF Compliance','assets/certs/fcc.jpg'],
+ ['IP65','防护等级','Ingress Protection','assets/certs/ip65.jpg'],
+ ['RoHS','有害物质限制','RoHS','assets/certs/rohs.jpg'],
+ ['IR','红外辐射检测','Infrared Test','assets/certs/ir.jpg'],
+ ['EMI','电磁屏蔽检测','Shielding Test','assets/certs/emi.jpg'],
+ ['实用新型专利','一种加热膜加工用贴合装置','Utility Model Patent','assets/certs/patent.jpg'],
+ ['软件著作权','碳纳米管材料加工集成软件 V1.0','Software Copyright','assets/certs/soft1.jpg'],
+ ['软件著作权','碳纳米管纯化智能作业系统 V1.0','Software Copyright','assets/certs/soft2.jpg'],
+ ['软件著作权','碳纳米管加热膜贴合工艺管理系统 V1.0','Software Copyright','assets/certs/soft3.jpg'],
+ ['软件著作权','碳纳米管加热膜制程智能监控系统 V1.0','Software Copyright','assets/certs/soft4.jpg'],
+ ['科技型中小企业','2025 年度入库','SME in Sci-Tech, 2025','assets/certs/sme2025.jpg','fit'],
+ ['科技型中小企业','2026 年度入库','SME in Sci-Tech, 2026','assets/certs/sme2026.jpg','fit'],
+ ['重点产业链企业','合肥市重点产业链企业','Key Industry Chain Enterprise','assets/certs/keychain.jpg','fit'],
+ ['耐水洗检测','40 次水洗后性能稳定','Wash-resistance Test','assets/certs/wash.jpg'],
+ ['科技查新','红外特征可控模拟与调控系统','Sci-Tech Novelty Search','assets/certs/novelty.jpg'],
+ ['注册商标','公爵森林 11 类（81750080）','Trademark, Class 11','assets/certs/tm.jpg'],
+ ['优秀科技创新人物','2025 安徽优秀科创企业推选','Outstanding Innovator 2025','assets/certs/person.jpg','fit']
+];
+var certHtml='';
+for(var rep=0;rep<2;rep++){
+ certs.forEach(function(c){
+  var fit=c[4]==='fit'?' fit':'';
+  certHtml+='<div class="cert"><div class="cert-btn">'+
+  '<img class="'+fit+'" src="'+c[3]+'" alt="'+c[0]+'" loading="lazy">'+
+  '<span class="nm">'+c[0]+'</span>'+
+  '<span class="cd" data-zh="'+c[1]+'" data-en="'+c[2]+'">'+c[1]+'</span></div></div>';
+ });
+}
+var why=[
+ ['材料自研','从配方到工艺自主把控，批次表现稳定。','In-house R&D','Formulation and process controlled in-house for consistent batches.'],
+ ['一体配套','膜与控制方案一次配齐，减少分开采购的匹配返工。','One-stop Supply','Film and control supplied together to avoid matching rework.'],
+ ['柔性定制','按应用结构裁切成型，适配异形表面。','Customization','Cut and shaped to fit curved and custom structures.'],
+ ['全球交付','支持多语言沟通与外贸交付，响应海外客户。','Global Delivery','Multilingual support and export delivery worldwide.']
+];
+var whyHtml='';
+why.forEach(function(w){
+ whyHtml+='<div class="cap-row"><span class="k" data-zh="'+w[0]+'" data-en="'+w[2]+'">'+w[0]+'</span><span class="d" data-zh="'+w[1]+'" data-en="'+w[3]+'">'+w[1]+'</span></div>';
+});
+return ''+
+'<section class="hero"><div class="wrap hero-grid">'+
+'<div class="hero-copy">'+
+'<div class="hero-label">FLEXIBLE HEATING FILM</div>'+
+'<h1><span class="mask-line"><span data-zh="柔性发热膜" data-en="FLEXIBLE HEAT">柔性发热膜</span></span>'+
+'<span class="mask-line"><span data-zh="可被设计的" data-en="A DESIGNABLE">可被设计的</span></span>'+
+'<span class="mask-line"><span data-zh="均匀热源" data-en="HEAT SOURCE">均匀热源</span></span></h1>'+
+'<p class="lead" data-zh="安徽栋界新材料研发并制造碳纳米管柔性发热膜，为全球客户提供均匀、安全、可定制的发热模组。" data-en="Anhui Dongjie develops and manufactures carbon nanotube flexible heating films, delivering uniform, safe and customizable modules worldwide.">安徽栋界新材料研发并制造碳纳米管柔性发热膜，为全球客户提供均匀、安全、可定制的发热模组。</p>'+
+'<div class="hero-actions"><a class="magnet solid" href="#/contact" data-zh="获取样品" data-en="Request Samples">获取样品</a>'+
+'<a class="magnet" href="#/technology" data-zh="了解技术" data-en="Technology">了解技术</a></div>'+
+'</div>'+
+'<div class="hero-3d">'+
+'<iframe src="assets/发热膜3D展示.html" title="发热膜3D结构展示" loading="eager"></iframe>'+
+'<div class="hero-3d-note" data-zh="可拖动旋转，支持分解视图" data-en="Drag to rotate, exploded view supported">可拖动旋转，支持分解视图</div>'+
+'</div>'+
+'</div></section>'+
+'<section><div class="wrap"><div class="sec-label reveal">01 / CAPABILITIES</div>'+
+'<h2 class="sec-title reveal" data-zh="从材料到模组，一体交付" data-en="From material to module, delivered as one">从材料到模组，一体交付</h2>'+
+'<div class="cap-list reveal">'+
+'<div class="cap-row"><span class="k" data-zh="柔性轻薄" data-en="Flexibility">柔性轻薄</span><span class="d" data-zh="超薄柔性，贴合异形表面。" data-en="Ultra-thin, conforming to curves.">超薄柔性，贴合异形表面。</span></div>'+
+'<div class="cap-row"><span class="k" data-zh="均匀发热" data-en="Uniform Heat">均匀发热</span><span class="d" data-zh="面状发热，温度分布一致。" data-en="Even surface heating.">面状发热，温度分布一致。</span></div>'+
+'<div class="cap-row"><span class="k" data-zh="一体交付" data-en="Integrated Delivery">一体交付</span><span class="d" data-zh="膜、传感与控制器一体，支持定制。" data-en="Film, sensing and controller as one.">膜、传感与控制器一体，支持定制。</span></div>'+
+'</div></div></section>'+
+'<section><div class="wrap"><div class="sec-label reveal">02 / CREDENTIALS</div>'+
+'<h2 class="sec-title reveal" data-zh="资质与荣誉" data-en="Credentials and honors">资质与荣誉</h2>'+
+'<p class="prose reveal" data-zh="公司资质、认证与第三方检测结果，证书扫描件可在询盘时提供。" data-en="Company credentials, certifications and third-party test results; certificate copies available on request.">公司资质、认证与第三方检测结果，证书扫描件可在询盘时提供。</p>'+
+'<div class="cert-wrap reveal"><div class="cert-track">'+certHtml+'</div></div>'+
+'<p class="cert-note reveal" data-zh="证书复印件仅供展示，完整证书文件请通过询盘与我们联系。" data-en="Certificate copies shown for display only; full documents available on request.">证书复印件仅供展示，完整证书文件请通过询盘与我们联系。</p>'+
+'</div></section>'+
+'<section><div class="wrap"><div class="sec-label reveal">03 / WHY US</div>'+
+'<h2 class="sec-title reveal" data-zh="为什么选择我们" data-en="Why work with us">为什么选择我们</h2>'+
+'<div class="cap-list reveal">'+whyHtml+'</div>'+
+'</div></section>'+
+'<section><div class="wrap"><div class="sec-label reveal">04 / APPLICATIONS</div>'+
+'<h2 class="sec-title reveal" data-zh="多个行业，一种柔性热源" data-en="Many industries, one heat source">多个行业，一种柔性热源</h2>'+
+'<div class="app-grid reveal">'+
+'<div class="app-cell"><div class="n">A-01</div><h3 data-zh="智能穿戴" data-en="Wearables">智能穿戴</h3></div>'+
+'<div class="app-cell"><div class="n">A-02</div><h3 data-zh="汽车座舱" data-en="Automotive">汽车座舱</h3></div>'+
+'<div class="app-cell"><div class="n">A-03</div><h3 data-zh="家居家纺" data-en="Home Textiles">家居家纺</h3></div>'+
+'<div class="app-cell"><div class="n">A-04</div><h3 data-zh="医疗康养" data-en="Wellness">医疗康养</h3></div>'+
+'</div></div></section>'+
+'<section class="vision reveal">'+
+'<div class="vision-bg"><img src="assets/cnt-banner.jpg" alt="" data-alt-zh="碳纳米管蜂窝结构背景" data-alt-en="Carbon nanotube honeycomb structure"></div>'+
+'<div class="vision-shade"></div>'+
+'<div class="vision-inner"><div class="wrap">'+
+'<div class="kicker">CARBON NANOTUBE</div>'+
+'<h2 data-zh="碳纳米管，正在重新定义热" data-en="Carbon nanotubes, redefining heat">碳纳米管，正在重新定义热</h2>'+
+'<div class="lines">'+
+'<p data-zh="它是迄今已知导电、导热性能最强的纳米材料之一，" data-en="Among the strongest known conductors of heat and electricity,">它是迄今已知导电、导热性能最强的纳米材料之一，</p>'+
+'<p data-zh="以碳纳米管为骨架的柔性发热膜，让热源像织物一样柔软、均匀、可控。" data-en="Flexible heating films built on carbon nanotubes turn heat into something soft, even and controllable.">以碳纳米管为骨架的柔性发热膜，让热源像织物一样柔软、均匀、可控。</p>'+
+'<p data-zh="从智能穿戴到新能源汽车，应用边界正在被持续改写。" data-en="From wearables to new-energy vehicles, the boundaries of application keep expanding.">从智能穿戴到新能源汽车，应用边界正在被持续改写。</p>'+
+'<p class="data"><span data-zh="全球柔性发热膜市场 2025 年 " data-en="The global flexible heating film market reached ">全球柔性发热膜市场 2025 年 </span><span class="em" data-zh="22.7 亿美元，" data-en="US$2.27 billion,">22.7 亿美元，</span></p>'+
+'<p class="data"><span data-zh="预计 2034 年达 " data-en="and is projected to reach ">预计 2034 年达 </span><span class="em" data-zh="45.2 亿美元，" data-en="US$4.52 billion,">45.2 亿美元，</span><span data-zh="复合年增长率 " data-en="at a CAGR of ">复合年增长率 </span><span class="em" data-zh="7.8%。" data-en="7.8%.">7.8%。</span></p>'+
+'</div>'+
+'<div class="rule"></div>'+
+'<div class="tagline">BECAUSE OF US · THE WORLD WILL BECOME A WARMER PLACE</div>'+
+'</div></div></section>';
+};
+/* ============ 关于 ============ */
+renderers['/about']=function(){return ''+
+'<div class="page-head"><div class="wrap"><div class="crumb">ABOUT</div>'+
+'<h1 data-zh="专注柔性发热材料的研发与制造" data-en="Focused on flexible heating materials">专注柔性发热材料的研发与制造</h1>'+
+'<p data-zh="安徽栋界新材料科技有限公司位于合肥中德合作创新示范园，以碳纳米管柔性发热膜为核心，面向全球客户提供从材料到模组的一体解决方案。" data-en="Based in the Sino-German Innovation Park, Hefei, Anhui Dongjie builds carbon nanotube flexible heating films and provides integrated solutions from material to module for clients worldwide.">安徽栋界新材料科技有限公司位于合肥中德合作创新示范园，以碳纳米管柔性发热膜为核心，面向全球客户提供从材料到模组的一体解决方案。</p>'+
+'</div></div>'+
+'<section><div class="wrap"><div class="split">'+
+'<div class="prose reveal"><p data-zh="我们以材料为起点，将导电薄膜的面状发热特性，转化为可被设计、可被集成的柔性热源。" data-en="Starting from the material, we turn the surface-heating property of conductive film into a designable, integrable heat source.">我们以材料为起点，将导电薄膜的面状发热特性，转化为可被设计、可被集成的柔性热源。</p>'+
+'<p data-zh="公司品牌为「公爵森林」，英文标识 DONGJIE，强调稳定、可靠与长期主义。" data-en="Our brand is DONGJIE, standing for stability, reliability and long-term partnership.">公司品牌为「公爵森林」，英文标识 DONGJIE，强调稳定、可靠与长期主义。</p></div>'+
+'<div class="media reveal"><img src="assets/building.jpg" alt="研究院" data-alt-zh="天津大学合肥创新发展研究院" data-alt-en="Innovation Research Institute, Hefei"></div>'+
+'</div></div></section>'+
+'<section><div class="wrap"><div class="sec-label reveal">CAPABILITY STAGES</div>'+
+'<h2 class="sec-title reveal" data-zh="从材料到交付的四个阶段" data-en="Four stages from material to delivery">从材料到交付的四个阶段</h2>'+
+'<div class="flow reveal">'+
+'<div class="flow-step"><span class="no">01</span><h3 data-zh="材料研发" data-en="Material R&D">材料研发</h3><p data-zh="导电薄膜配方与工艺开发" data-en="Conductive film formulation">导电薄膜配方与工艺开发</p></div>'+
+'<div class="flow-step"><span class="no">02</span><h3 data-zh="薄膜制备" data-en="Film Making">薄膜制备</h3><p data-zh="稳定控阻的批量制备" data-en="Controlled batch production">稳定控阻的批量制备</p></div>'+
+'<div class="flow-step"><span class="no">03</span><h3 data-zh="模组集成" data-en="Integration">模组集成</h3><p data-zh="传感与控制器一体集成" data-en="Sensing and controller integration">传感与控制器一体集成</p></div>'+
+'<div class="flow-step"><span class="no">04</span><h3 data-zh="定制交付" data-en="Custom Delivery">定制交付</h3><p data-zh="按应用结构定制交付" data-en="Tailored to application">按应用结构定制交付</p></div>'+
+'</div></div></section>';
+};
+
+/* ============ 技术 ============ */
+renderers['/technology']=function(){return ''+
+'<div class="page-head"><div class="wrap"><div class="crumb">TECHNOLOGY</div>'+
+'<h1 data-zh="碳纳米管柔性发热膜" data-en="Carbon nanotube flexible heating film">碳纳米管柔性发热膜</h1>'+
+'<p data-zh="一种以导电薄膜为载体、将电能转化为均匀面热的柔性发热材料。" data-en="A flexible material that converts electrical energy into uniform surface heat through a conductive film.">一种以导电薄膜为载体、将电能转化为均匀面热的柔性发热材料。</p>'+
+'</div></div>'+
+'<div class="banner"><img src="assets/graphene-banner.jpg" alt="石墨烯结构" data-alt-zh="石墨烯与碳纳米管结构" data-alt-en="Graphene and carbon nanotube structure"><div class="cap"><div class="wrap"><h3 data-zh="纳米级导电网络" data-en="Nanoscale conductive network">纳米级导电网络</h3></div></div></div>'+
+'<section><div class="wrap"><div class="split">'+
+'<div class="media reveal"><img src="assets/cnt-network.jpg" alt="碳纳米管网络" data-alt-zh="碳纳米管导电网络" data-alt-en="Carbon nanotube conductive network"></div>'+
+'<div class="prose reveal"><p data-zh="导电薄膜内部形成连续的导电网络，通电后整个面均匀发热，而非单点发热。" data-en="A continuous conductive network inside the film lets the whole surface heat evenly, rather than at a single point.">导电薄膜内部形成连续的导电网络，通电后整个面均匀发热，而非单点发热。</p>'+
+'<p data-zh="柔性基底使其可弯折、可贴合异形表面，适配多种产品结构。" data-en="The flexible substrate allows bending and conforming to curved surfaces.">柔性基底使其可弯折、可贴合异形表面，适配多种产品结构。</p></div>'+
+'</div></div></section>'+
+'<section><div class="wrap"><div class="sec-label reveal">CORE PROPERTIES</div>'+
+'<h2 class="sec-title reveal" data-zh="核心特性" data-en="Core properties">核心特性</h2>'+
+'<div class="cap-list reveal">'+
+'<div class="cap-row"><span class="k" data-zh="柔性轻薄" data-en="Flexibility">柔性轻薄</span><span class="d" data-zh="超薄柔性，贴合异形表面。" data-en="Ultra-thin, conforming to curves.">超薄柔性，贴合异形表面。</span></div>'+
+'<div class="cap-row"><span class="k" data-zh="均匀发热" data-en="Uniform Heat">均匀发热</span><span class="d" data-zh="面状发热，温度分布一致。" data-en="Even surface heating.">面状发热，温度分布一致。</span></div>'+
+'<div class="cap-row"><span class="k" data-zh="低压安全" data-en="Low-Voltage Safety">低压安全</span><span class="d" data-zh="低压直流驱动，贴近人体更安心。" data-en="Low-voltage DC, safe to wear.">低压直流驱动，贴近人体更安心。</span></div>'+
+'<div class="cap-row"><span class="k" data-zh="稳定控阻" data-en="Stable Resistance">稳定控阻</span><span class="d" data-zh="工艺控制电阻，批次一致。" data-en="Controlled resistance for consistency.">工艺控制电阻，批次一致。</span></div>'+
+'<div class="cap-row"><span class="k" data-zh="耐弯折" data-en="Bend Endurance">耐弯折</span><span class="d" data-zh="柔性结构，适应反复弯折。" data-en="Withstands repeated bending.">柔性结构，适应反复弯折。</span></div>'+
+'</div></div></section>'+
+'<section><div class="wrap"><div class="split">'+
+'<div class="prose reveal"><p data-zh="膜材表面可实现疏水表现，在潮湿与水洗环境下保持性能稳定。" data-en="The film surface can be made water-repellent, keeping performance stable in damp and wash conditions.">膜材表面可实现疏水表现，在潮湿与水洗环境下保持性能稳定。</p>'+
+'<p data-zh="材料不含金属，耐化学腐蚀，适合长期使用。" data-en="Metal-free and resistant to chemical corrosion for long-term use.">材料不含金属，耐化学腐蚀，适合长期使用。</p></div>'+
+'<div class="media reveal"><img src="assets/hydrophobic.jpg" alt="疏水表面" data-alt-zh="疏水表面" data-alt-en="Water-repellent surface"></div>'+
+'</div></div></section>';
+};
+/* ============ 应用 ============ */
+renderers['/applications']=function(){
+  var prods=[
+    ['01','腰腹','Waist & Abdomen','发热腰带','Heated Waist Belt','27.6 × 17 × 6.6 cm · 443 g','assets/products/p01.jpg',[['石墨烯发热','Graphene heating'],['三档控温','3-level control'],['亲肤面料','Skin-friendly'],['可水洗','Washable']],['53.5 × 56.5 × 37 cm','15.25 kg','32']],
+    ['02','腰腹','Waist & Abdomen','真丝暖腹宝','Heated Silk Abdominal Warmer','27 × 15 × 5.5 cm · 300 g','assets/products/p02.jpg',[['真丝面料','Silk fabric'],['远红外理疗','Far-infrared'],['三档控温','3-level control'],['可水洗','Washable']],['56 × 45 × 32 cm','10.7 kg','32']],
+    ['03','膝部','Knee','发热远红外护膝','Far-Infrared Heated Knee Pad','27.5 × 15 × 4.8 cm · 348 g','assets/products/p03.jpg',[['远红外理疗','Far-infrared'],['祛湿防寒','Cold protection'],['运动防护','Sports protection']],['55.5 × 49 × 31.5 cm','14.1 kg','40']],
+    ['04','肩颈背','Shoulders, Neck & Back','发热真丝颈带','Heated Silk Neck Band','35.5 × 17.5 × 7.2 cm · 617 g','assets/products/p04.jpg',[['真丝材质','Silk material'],['三档控温','3-level control'],['暖颈护颈','Neck care']],['54.5 × 38.5 × 48.5 cm','12.2 kg','18']],
+    ['05','肩颈背','Shoulders, Neck & Back','理疗肩颈宝','Silk Shoulder & Neck Therapy Warmer','37 × 27 × 5 cm · 400 g','assets/products/p05.jpg',[['远红外理疗','Far-infrared'],['艾灸护理','Moxibustion care'],['三档调温','3-level control'],['双面真丝','Double-sided silk']],['55 × 55 × 41 cm','9.55 kg','20']],
+    ['06','肩颈背','Shoulders, Neck & Back','发热围巾','Heated Scarf','27.5 × 17 × 7 cm · 850 g','assets/products/p06.jpg',[['竹纤维面料','Bamboo fibre'],['快速升温','Rapid heat-up'],['三档控温','3-level control'],['披肩两用','Scarf & shawl']],['57.5 × 55.5 × 37 cm','27.9 kg','32']],
+    ['07','肩颈背','Shoulders, Neck & Back','智能颈托','Smart Heated Neck Brace','23.5 × 13.5 × 9.5 cm · 475 g','assets/products/p07.jpg',[['三档智能调温','Smart 3-level'],['快速升温','Rapid heat-up'],['缓解颈椎不适','Cervical relief']],['50 × 42.5 × 48.5 cm','15.4 kg','30']],
+    ['08','脚部','Feet','发热暖脚宝','Heated Foot Warmer','36 × 32 × 5.5 cm · 658 g','assets/products/p08.jpg',[['三档智能调温','Smart 3-level'],['快速升温','Rapid heat-up'],['手机智能控制','App control']],['66 × 38 × 49 cm','15 kg','18']],
+    ['09','全身','Whole Body','多功能羽绒毯','Multifunctional Down Blanket','24 × 19 × 11 cm · 931 g','assets/products/p09.jpg',[['天然白鸭绒','Natural duck down'],['一毯多用','Multi-use'],['三档智能温控','Smart 3-level'],['附赠收纳袋','Storage bag']],['50 × 43 × 58 cm','19 kg','20']],
+    ['10','功能','Functional','功能养生椅','Functional Wellness Chair','110 × 70 × 66 cm · 25 kg','assets/products/p10.jpg',[['远红外深层渗透','Deep far-infrared'],['促进血液循环','Circulation'],['缓解疲劳','Fatigue relief']],['115 × 75 × 70 cm','27 kg','1']],
+    ['12','眼部','Eyes','发热真丝眼罩','Heated Silk Eye Mask','30 × 12 × 3.5 cm · 155 g','assets/products/p12.jpg',[['低压供电','Low-voltage'],['定时自动断电','Auto-off'],['真蚕丝','Mulberry silk'],['360° 遮光','360° blackout']],['65 × 33 × 55 cm','13.6 kg','80']],
+    ['16','康养','Wellness','碳纳米发热毯','Carbon Nanotube Heating Blanket','90 × 150 cm · 840 g','assets/products/p16.jpg',[['精准控温','Precise control'],['多档可调','Multi-level'],['快速升温','Rapid heat-up'],['可水洗','Washable']],['65 × 48 × 72 cm','14.5 kg','16']],
+    ['17','康养','Wellness','碳纳米暖手宝','Carbon Nanotube Hand Warmer','28 × 23 cm · 248 g','assets/products/p17.jpg',[['一宝多用','Multi-use'],['低压安全','Low-voltage'],['可水洗','Washable']],['60 × 45 × 68 cm','13.5 kg','50']],
+    ['18','康养','Wellness','碳纳米发热马甲','Carbon Nanotube Heated Vest','S–4XL · 700 g','assets/products/p18.jpg',[['防风防水','Windproof & waterproof'],['智能恒温','Constant temperature'],['腰背双发热','Dual heating']],['60 × 45 × 65 cm','15.8 kg','21']],
+    ['19','面部','Face','智能发热面贴','Smart Heated Facial Patch','32 × 21 cm · 15 g','assets/products/p19.jpg',[['低压供电','Low-voltage'],['定时自动断电','Auto-off'],['医用级硅胶','Medical silicone'],['三档控温','3-level control']],['55 × 40 × 48 cm','2.6 kg','90']]
+  ];
+  window.PRODS=prods;
+  var cats=[['all','全部','All'],['腰腹','Waist & Abdomen'],['膝部','Knee'],['肩颈背','Shoulders, Neck & Back'],['脚部','Feet'],['全身','Whole Body'],['功能','Functional'],['眼部','Eyes'],['康养','Wellness'],['面部','Face']];
+  var filter='<div class="cat-filter">'+cats.map(function(c){return '<button type="button" class="cat-pill" data-cat="'+c[0]+'" data-zh="'+c[1]+'" data-en="'+c[2]+'">'+c[1]+'</button>';}).join('')+'</div>';
+  var grid=prods.map(function(p){
+    return '<div class="prod-item'+(p[0]==='10'?' wide':'')+'" data-cat="'+p[1]+'" data-no="'+p[0]+'" tabindex="0" role="button" aria-label="'+p[3]+'">'+
+    '<div class="ph"><img src="'+p[6]+'" alt="'+p[3]+'" loading="lazy"></div>'+
+    '<div class="prod-meta"><span class="pno">NO. '+p[0]+'</span><span data-zh="'+p[1]+'" data-en="'+p[2]+'">'+p[1]+'</span></div>'+
+    '<h3 data-zh="'+p[3]+'" data-en="'+p[4]+'">'+p[3]+'</h3>'+
+    '<div class="spec">'+p[5]+'</div>'+
+    '<div class="tags">'+p[7].map(function(t){return '<span class="tag2" data-zh="'+t[0]+'" data-en="'+t[1]+'">'+t[0]+'</span>';}).join('')+'</div>'+
+    '<div class="prod-open" data-zh="查看详情" data-en="Details">查看详情</div></div>';
+  }).join('');
+  var series=[
+    ['S-01','通用型柔性发热膜','基础取向，应用范围广，面状均匀发热。','General-purpose Film','General-purpose flexible film for broad applications.'],
+    ['S-02','纯碳型柔性发热膜','纯碳骨架，面向中高温场景，响应迅速。','Pure-carbon Film','Pure-carbon structure for medium-to-high temperature.'],
+    ['S-03','耐蚀型柔性发热膜','微孔结构，耐强腐蚀，透气不透水。','Corrosion-resistant Film','Micro-porous, corrosion-resistant and breathable.']
+  ];
+  var seriesHtml='<section><div class="wrap"><div class="sec-label reveal">SERIES</div>'+
+  '<h2 class="sec-title reveal" data-zh="产品系列" data-en="Product series">产品系列</h2>'+
+  '<div class="series-list reveal">';
+  series.forEach(function(s){
+    seriesHtml+='<div class="series-row"><span class="tag">'+s[0]+'</span><div><h3 data-zh="'+s[1]+'" data-en="'+s[3]+'">'+s[1]+'</h3><p data-zh="'+s[2]+'" data-en="'+s[4]+'">'+s[2]+'</p></div></div>';
+  });
+  seriesHtml+='</div></div></section>';
+  var blocks=[
+    ['assets/scene-wear.jpg','智能穿戴','Wearables','贴近人体的加热服饰与穿戴设备，柔性薄膜贴合衣物结构，低压驱动。','Heated apparel and wearables; flexible film conforms to garments, low-voltage driven.'],
+    ['assets/scene-car.jpg','汽车座舱','Automotive Interiors','座椅与内饰的柔性加热，面状发热使温度分布更均匀。','Flexible heating for seats and interiors with even surface temperature.'],
+    ['assets/scene-home.jpg','家居家纺','Home Textiles','织物内的柔性热源，适配毯、垫等家纺产品。','Flexible heat inside textiles for blankets and pads.'],
+    ['assets/thermal.jpg','医疗康养','Health & Wellness','康养场景中的柔性温热应用，强调均匀与稳定。','Flexible thermal applications for wellness, even and stable.']
+  ];
+  var html='<div class="page-head"><div class="wrap"><div class="crumb">PRODUCTS</div>'+
+  '<h1 data-zh="产品中心" data-en="Products">产品中心</h1>'+
+  '<p data-zh="碳纳米管与石墨烯消费端产品共 15 款，覆盖九大品类，为个人与家庭提供温暖解决方案。" data-en="15 CNT &amp; graphene consumer products across nine categories, delivering warmth for individuals and families.">碳纳米管与石墨烯消费端产品共 15 款，覆盖九大品类，为个人与家庭提供温暖解决方案。</p></div></div>'+
+  '<section><div class="wrap"><div class="sec-label reveal">C-END PRODUCTS</div>'+
+  '<h2 class="sec-title reveal" data-zh="终端产品" data-en="Consumer products">终端产品</h2>'+
+  '<div class="reveal">'+filter+'<div class="prod-grid">'+grid+'</div>'+
+  '<p class="prod-note" data-zh="产品尺寸与净重为标称值，以出厂实物为准；图片为产品示意。" data-en="Dimensions and net weights are nominal values; actual products prevail. Images are for illustration.">产品尺寸与净重为标称值，以出厂实物为准；图片为产品示意。</p></div></div></section>'+
+  seriesHtml+
+  '<section><div class="wrap"><div class="sec-label reveal">APPLICATION AREAS</div>'+
+  '<h2 class="sec-title reveal" data-zh="应用领域" data-en="Application areas">应用领域</h2></div></section>';
+  blocks.forEach(function(b,i){
+    html+='<section><div class="wrap"><div class="split">'+
+    '<div class="media reveal"><img src="'+b[0]+'" alt="'+b[1]+'" data-alt-zh="'+b[1]+'" data-alt-en="'+b[2]+'"></div>'+
+    '<div class="reveal"><div class="sec-label">A-0'+(i+1)+'</div><h2 class="sec-title" data-zh="'+b[1]+'" data-en="'+b[2]+'">'+b[1]+'</h2>'+
+    '<p class="prose" style="margin-top:18px" data-zh="'+b[3]+'" data-en="'+b[4]+'">'+b[3]+'</p></div>'+
+    '</div></div></section>';
+  });
+  return html;
+};
+
+/* ============ 合作 ============ */
+renderers['/partnership']=function(){return ''+
+'<div class="page-head"><div class="wrap"><div class="crumb">PARTNERSHIP</div>'+
+'<h1 data-zh="合作模式与开发流程" data-en="Partnership & process">合作模式与开发流程</h1>'+
+'<p data-zh="成熟方案与定制开发并行，面向全球客户与海外市场。" data-en="Ready solutions and custom development for clients worldwide.">成熟方案与定制开发并行，面向全球客户与海外市场。</p></div></div>'+
+'<section><div class="wrap"><div class="sec-label reveal">MODELS</div>'+
+'<h2 class="sec-title reveal" data-zh="合作模式" data-en="Models">合作模式</h2>'+
+'<div class="cap-list reveal">'+
+'<div class="cap-row"><span class="k" data-zh="成熟方案复用" data-en="Ready Solutions">成熟方案复用</span><span class="d" data-zh="成熟方案直接融入产品，缩短开发周期。" data-en="Integrate ready solutions to shorten development.">成熟方案直接融入产品，缩短开发周期。</span></div>'+
+'<div class="cap-row"><span class="k" data-zh="个性化定制" data-en="Custom Development">个性化定制</span><span class="d" data-zh="按应用结构与需求定制开发。" data-en="Tailored to your application and needs.">按应用结构与需求定制开发。</span></div>'+
+'<div class="cap-row"><span class="k" data-zh="模组供应" data-en="Module Supply">模组供应</span><span class="d" data-zh="柔性发热模组与组件稳定供应。" data-en="Reliable supply of flexible heating modules.">柔性发热模组与组件稳定供应。</span></div>'+
+'</div></div></section>'+
+'<section><div class="wrap"><div class="sec-label reveal">PROCESS</div>'+
+'<h2 class="sec-title reveal" data-zh="开发流程" data-en="Development process">开发流程</h2>'+
+'<div class="flow reveal">'+
+'<div class="flow-step"><span class="no">01</span><h3 data-zh="需求沟通" data-en="Brief">需求沟通</h3><p data-zh="明确应用与结构" data-en="Define application">明确应用与结构</p></div>'+
+'<div class="flow-step"><span class="no">02</span><h3 data-zh="方案设计" data-en="Design">方案设计</h3><p data-zh="提出方案与结构" data-en="Propose solution">提出方案与结构</p></div>'+
+'<div class="flow-step"><span class="no">03</span><h3 data-zh="样品验证" data-en="Samples">样品验证</h3><p data-zh="制作样品确认" data-en="Build samples">制作样品确认</p></div>'+
+'<div class="flow-step"><span class="no">04</span><h3 data-zh="测试确认" data-en="Testing">测试确认</h3><p data-zh="测试与品质确认" data-en="Verify quality">测试与品质确认</p></div>'+
+'<div class="flow-step"><span class="no">05</span><h3 data-zh="批量交付" data-en="Delivery">批量交付</h3><p data-zh="稳定批量供应" data-en="Stable supply">稳定批量供应</p></div>'+
+'</div>'+
+'<p class="prose reveal" style="margin-top:36px" data-zh="我们通过标准化工艺与检验流程控制批次一致性，保障长期稳定供应。" data-en="Standardized process and inspection ensure batch consistency and reliable supply.">我们通过标准化工艺与检验流程控制批次一致性，保障长期稳定供应。</p>'+
+'</div></section>';
+};
+/* ============ 新闻 ============ */
+renderers['/news']=function(){
+  var CATNAME={company:['公司新闻','Company'],industry:['行业资讯','Industry'],expo:['展会信息','Events']};
+  var posts=[
+   {c:'company',img:'assets/lab.jpg',date:'2026-10-18',zt:'研发团队完成新一代柔性发热膜工艺验证',en:'R&D completes process validation for new flexible heating film',zd:'围绕均匀性与稳定性，团队完成新一轮工艺验证，为后续定制打样提供支撑。',ed:'The team completed a new round of process validation for uniformity and stability.'},
+   {c:'company',img:'assets/craft.jpg',date:'2026-09-26',zt:'柔性发热模组制造环节完成升级',en:'Flexible heating module manufacturing upgraded',zd:'制造环节进一步优化，提升模组一致性与交付效率。',ed:'Manufacturing was optimized to improve module consistency and delivery.'},
+   {c:'company',img:'assets/scene-wear.jpg',date:'2026-08-14',zt:'与客户联合开发可穿戴发热方案',en:'Joint development of wearable heating solutions',zd:'面向智能穿戴场景，团队与客户共同推进柔性发热模组的结构设计。',ed:'The team worked with clients on the structure of flexible heating modules for wearables.'},
+   {c:'industry',img:'assets/scene-car.jpg',date:'2026-10-30',zt:'柔性发热材料在新能源汽车座舱的应用趋势',en:'Flexible heating in new-energy vehicle interiors',zd:'柔性薄膜为座椅与内饰带来更均匀的温度分布，座舱应用持续扩展。',ed:'Flexible films bring even heating to seats and interiors, with growing cabin use.'},
+   {c:'industry',img:'assets/nano-micro.jpg',date:'2026-09-08',zt:'纳米导电材料产业发展观察',en:'Observations on nano-conductive materials',zd:'纳米导电网络在柔性电子领域的应用逐步成熟，材料工艺持续演进。',ed:'Nano-conductive networks are maturing in flexible electronics as processes evolve.'},
+   {c:'industry',img:'assets/scene-home.jpg',date:'2026-07-22',zt:'家居纺织品中的柔性热源需求增长',en:'Rising demand for flexible heat in home textiles',zd:'可集成于织物内的柔性发热方案，正成为家居家纺的新方向。',ed:'Flexible heating integrated into fabrics is becoming a new direction for home textiles.'},
+   {c:'expo',img:'assets/product-key.jpg',date:'2026-12-09',zt:'公司将参加国际电子元器件与材料展',en:'Dongjie to join the international electronics and materials expo',zd:'公司将携柔性发热膜与模组方案参展，欢迎到现场交流。',ed:'The company will showcase flexible heating films and modules at the expo.'},
+   {c:'expo',img:'assets/building.jpg',date:'2027-03-16',zt:'公爵森林亮相国际新材料展',en:'DONGJIE at the international new-materials exhibition',zd:'围绕柔性发热材料，公司将在新材料展展示最新应用方向。',ed:'The company will present the latest flexible heating applications at the exhibition.'}
+  ];
+  var h='<div class="page-head"><div class="wrap"><div class="crumb">NEWS</div>'+
+  '<h1 data-zh="最新发布" data-en="Latest updates">最新发布</h1>'+
+  '<p data-zh="公司动态、行业资讯与展会信息，持续更新。" data-en="Company news, industry insights and events.">公司动态、行业资讯与展会信息，持续更新。</p></div></div>'+
+  '<section><div class="wrap"><div class="news-layout">'+
+  '<aside class="news-side"><div class="side-title" data-zh="最新发布" data-en="Latest">最新发布</div>'+
+  '<button class="news-cat active" data-cat="all" data-zh="全部" data-en="All">全部</button>'+
+  '<button class="news-cat" data-cat="company" data-zh="公司新闻" data-en="Company">公司新闻</button>'+
+  '<button class="news-cat" data-cat="industry" data-zh="行业资讯" data-en="Industry">行业资讯</button>'+
+  '<button class="news-cat" data-cat="expo" data-zh="展会信息" data-en="Events">展会信息</button>'+
+  '<div class="news-sub">'+
+  '<div class="sub-t" data-zh="订阅最新资讯" data-en="Subscribe for updates">订阅最新资讯</div>'+
+  '<p class="sub-d" data-zh="公司新闻、行业资讯与展会信息，发布后自动同步到您的邮箱。" data-en="Company news, industry insights and event updates, delivered to your inbox.">公司新闻、行业资讯与展会信息，发布后自动同步到您的邮箱。</p>'+
+  '<form class="sub-form" id="subForm" novalidate>'+
+  '<input type="email" id="subEmail" placeholder="your@email.com" data-ph-zh="您的邮箱" data-ph-en="Your email" aria-label="Email" autocomplete="email">'+
+  '<button type="submit" class="magnet solid" data-zh="订阅" data-en="Subscribe">订阅</button>'+
+  '</form>'+
+  '</div></aside>'+
+  '<div class="news-main" id="newsMain">';
+  posts.forEach(function(p){
+   var cn=CATNAME[p.c];
+   h+='<article class="post reveal" data-cat="'+p.c+'">'+
+   '<div class="post-thumb"><img src="'+p.img+'" alt="" data-alt-zh="'+p.zt+'" data-alt-en="'+p.en+'"></div>'+
+   '<div class="post-body"><div class="post-top">'+
+   '<span class="post-cat" data-zh="'+cn[0]+'" data-en="'+cn[1]+'">'+cn[0]+'</span>'+
+   '<span class="post-date">'+p.date+'</span></div>'+
+   '<h3 data-zh="'+p.zt+'" data-en="'+p.en+'">'+p.zt+'</h3>'+
+   '<p data-zh="'+p.zd+'" data-en="'+p.ed+'">'+p.zd+'</p></div></article>';
+  });
+  return h+'</div></div></div></section>';
+};
+
+/* ============ 联系 ============ */
+renderers['/contact']=function(){return ''+
+'<div class="page-head"><div class="wrap"><div class="crumb">CONTACT</div>'+
+'<h1 data-zh="联系我们" data-en="Contact us">联系我们</h1>'+
+'<p data-zh="获取样品、定制方案与商务合作，欢迎与我们联系。" data-en="Request samples, custom solutions and partnership.">获取样品、定制方案与商务合作，欢迎与我们联系。</p></div></div>'+
+'<section><div class="wrap"><div class="contact-grid">'+
+'<div class="cways reveal">'+
+'<div class="way"><div class="l" data-zh="电话" data-en="TEL">电话</div><div class="v">400-9020-918</div></div>'+
+'<div class="way"><div class="l" data-zh="邮箱" data-en="EMAIL">邮箱</div><div class="v">djkj321@163.com</div></div>'+
+'<div class="way"><div class="l" data-zh="地址" data-en="ADDRESS">地址</div><div class="v" data-zh="安徽省合肥市经开区中德合作创新示范园" data-en="Sino-German Innovation Park, Hefei, Anhui">安徽省合肥市经开区中德合作创新示范园</div></div>'+
+'<div class="way"><div class="l" data-zh="品牌" data-en="BRAND">品牌</div><div class="v">公爵森林 DONGJIE</div></div>'+
+'</div>'+
+'<form class="reveal" id="contactForm">'+
+'<div class="field"><label data-zh="姓名" data-en="Name">姓名</label><input required name="name"></div>'+
+'<div class="field"><label data-zh="邮箱" data-en="Email">邮箱</label><input required type="email" name="email"></div>'+
+'<div class="field"><label data-zh="公司" data-en="Company">公司</label><input name="company"></div>'+
+'<div class="field"><label data-zh="需求" data-en="Message">需求</label><textarea rows="4" name="message"></textarea></div>'+
+'<div class="consent"><input type="checkbox" required id="dataConsent"><label for="dataConsent" data-zh="我同意安徽栋界根据此表单中的信息与我联系，并按隐私政策处理我的数据。" data-en="I agree that Anhui Dongjie may contact me using this information and process my data per the Privacy Policy.">我同意安徽栋界根据此表单中的信息与我联系，并按隐私政策处理我的数据。</label></div>'+
+'<button type="submit" data-zh="提交需求" data-en="Submit">提交需求</button>'+
+'</form></div></div></section>';
+};
+
+/* ============ 表单提交（在每次渲染后绑定） ============ */
+function bindForm(){
+  var f=view.querySelector('#contactForm');
+  if(!f)return;
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var d=new FormData(f);
+    var body=(d.get('name')||'')+' '+(d.get('company')||'')+'\n'+(d.get('message')||'');
+    var ok=displayLang()==='en'?'Your request has been recorded.':'需求已记录，我们会尽快与您联系。';
+    toast(ok);
+    try{location.href='mailto:djkj321@163.com?subject='+encodeURIComponent('Website Inquiry')+'&body='+encodeURIComponent(body);}catch(err){}
+    f.reset();
+  });
+}
+/* ============ 新闻分类筛选 ============ */
+function bindNews(){
+  var main=view.querySelector('#newsMain');
+  if(!main)return;
+  var cats=view.querySelectorAll('.news-cat'),posts=main.querySelectorAll('.post');
+  cats.forEach(function(btn){
+    btn.addEventListener('click',function(){
+      cats.forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      var c=btn.getAttribute('data-cat');
+      posts.forEach(function(p){
+        p.style.display=(c==='all'||p.getAttribute('data-cat')===c)?'':'none';
+      });
+    });
+  });
+}
+/* ============ 磁吸 + 表单绑定 ============ */
+function bindMagnet(){
+  bindForm();
+  if(matchMedia('(pointer:coarse)').matches)return;
+  view.querySelectorAll('.magnet').forEach(function(el){
+    el.addEventListener('mousemove',function(ev){
+      var r=el.getBoundingClientRect();
+      var x=ev.clientX-r.left-r.width/2,y=ev.clientY-r.top-r.height/2;
+      el.style.transform='translate('+x*.25+'px,'+y*.3+'px)';
+    });
+    el.addEventListener('mouseleave',function(){el.style.transform='translate(0,0)';});
+  });
+}
+
+/* ============ Canvas 粒子晶格（固定背景，初始化一次） ============ */
+(function(){
+  var cv=document.getElementById('bgcanvas'),ctx=cv.getContext('2d');
+  var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var W,H,DPR,nodes=[],mouse={x:-999,y:-999},cur={x:-999,y:-999};
+  var GAP=92,LINK=118;
+  function resize(){
+    DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
+    cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);build();
+  }
+  function build(){
+    nodes=[];
+    var cols=Math.ceil(W/GAP)+2,rows=Math.ceil(H/GAP)+2;
+    for(var i=0;i<cols;i++)for(var j=0;j<rows;j++){
+      var off=(j%2)?GAP/2:0;
+      nodes.push({bx:i*GAP-GAP+off+(Math.random()*18-9),by:j*GAP-GAP+(Math.random()*18-9),ph:Math.random()*Math.PI*2,amp:4+Math.random()*7});
+    }
+  }
+  function pos(n,t){return{x:n.bx+Math.sin(t*.0006+n.ph)*n.amp,y:n.by+Math.cos(t*.0005+n.ph)*n.amp};}
+  function frame(t){
+    ctx.clearRect(0,0,W,H);
+    cur.x+=(mouse.x-cur.x)*.06;cur.y+=(mouse.y-cur.y)*.06;
+    var pts=nodes.map(function(n){return pos(n,t);});
+    for(var i=0;i<pts.length;i++){var p=pts[i];
+      for(var k=i+1;k<pts.length;k++){var q=pts[k],d=Math.hypot(p.x-q.x,p.y-q.y);
+        if(d<LINK){var dm=Math.hypot((p.x+q.x)/2-cur.x,(p.y+q.y)/2-cur.y);
+          var a=(1-d/LINK)*.16+Math.max(0,1-dm/180)*.22;
+          ctx.strokeStyle='rgba(63,161,120,'+a+')';ctx.lineWidth=1;
+          ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke();}}}
+    for(var j=0;j<pts.length;j++){var u=pts[j],du=Math.hypot(u.x-cur.x,u.y-cur.y),hot=Math.max(0,1-du/150);
+      ctx.beginPath();ctx.fillStyle=hot>.05?'rgba(63,161,120,'+(.25+hot*.55)+')':'rgba(150,180,172,.32)';
+      ctx.arc(u.x,u.y,hot>.05?1.4+hot*1.6:1.1,0,Math.PI*2);ctx.fill();}
+    if(!reduce)requestAnimationFrame(frame);
+  }
+  addEventListener('mousemove',function(e){mouse.x=e.clientX;mouse.y=e.clientY;});
+  addEventListener('mouseleave',function(){mouse.x=-999;mouse.y=-999;});
+  addEventListener('resize',resize);
+  resize();
+  if(reduce){frame(0);}else{requestAnimationFrame(frame);}
+})();
+
+/* ============ Cookie 同意 ============ */
+var cookieBar=document.getElementById('cookieBar'),cookieChoice=localStorage.getItem('djcookie');
+if(!cookieChoice){requestAnimationFrame(function(){cookieBar.classList.add('show');});}
+function setCookieChoice(c){localStorage.setItem('djcookie',c);cookieBar.classList.remove('show');}
+document.getElementById('cookieAccept').addEventListener('click',function(){setCookieChoice('accept');});
+document.getElementById('cookieReject').addEventListener('click',function(){setCookieChoice('reject');});
+
+/* ============ 联系块：触摸设备点击展开 ============ */
+var dock=document.getElementById('contactDock'),dockTab=document.getElementById('dockTab');
+dockTab.addEventListener('click',function(){
+ if(matchMedia('(pointer:coarse)').matches){dock.classList.toggle('open');}
+});
+document.addEventListener('click',function(e){
+ if(!dock.contains(e.target))dock.classList.remove('open');
+});
+
+/* ============ 移动端汉堡菜单 ============ */
+var navToggle=document.getElementById('navToggle'),navLinksEl=document.getElementById('navLinks');
+navToggle.addEventListener('click',function(){
+ var open=navLinksEl.classList.toggle('open');
+ navToggle.classList.toggle('x',open);
+ navToggle.setAttribute('aria-expanded',open?'true':'false');
+});
+navLinksEl.addEventListener('click',function(e){
+ if(e.target.tagName==='A'){
+  navLinksEl.classList.remove('open');navToggle.classList.remove('x');
+  navToggle.setAttribute('aria-expanded','false');
+ }
+});
+
+/* ============ 占位链接统一提示 ============ */
+function plinkMsg(){return displayLang()==='en'?'Content to be added before launch.':'内容待补充，将在正式上线前完善。';}
+document.addEventListener('click',function(e){
+ var p=e.target.closest('.plink');
+ if(p){e.preventDefault();toast(plinkMsg());}
+});
+
+/* ============ 初始路由 ============ */
+if(!location.hash)location.hash='#/home';
+route();
+</script>
+</body>
+</html>
